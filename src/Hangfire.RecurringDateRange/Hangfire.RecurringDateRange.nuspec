@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Hangfire.RecurringDateRange</id>
-    <version>0.0.0</version>
+    <version>$version$</version>
     <title>Hangfire.RecurringDateRange</title>
     <authors>Joe Coutcher,Sergey Odinokov</authors>
     <owners>jcoutch,odinserj</owners>
@@ -13,6 +13,9 @@
     <tags>Hangfire OWIN Long-Running Background Fire-And-Forget Delayed Recurring Tasks Jobs Scheduler Threading Queues</tags>
     <releaseNotes></releaseNotes>
     <dependencies>
+		<dependency id="Hangfire.Core" version="1.6.8" />
+		<dependency id="NCrontab.Advanced" version="1.2.3.3" />
+		<dependency id="Newtonsoft.Json" version="5.0.1" />
     </dependencies>
   </metadata>
   <files>

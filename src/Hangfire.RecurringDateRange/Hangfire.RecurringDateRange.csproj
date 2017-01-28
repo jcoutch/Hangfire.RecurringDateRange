@@ -67,6 +67,7 @@
     <Compile Include="Server\ScheduleInstant.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Hangfire.RecurringDateRange.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
