@@ -38,6 +38,7 @@ namespace Hangfire.Core.Tests.Server
             // Setting up the successful path
             _instant = new Mock<IScheduleInstant>();
             _instant.Setup(x => x.GetNextInstants(It.IsAny<DateTime>(), null)).Returns(new[] { _instant.Object.NowInstant });
+            _instant.Setup(x => x.GetNextInstants(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(new[] { _instant.Object.NowInstant });
             _instant.Setup(x => x.NowInstant).Returns(DateTime.UtcNow);
             _instant.Setup(x => x.NextInstant).Returns(_instant.Object.NowInstant);
 
@@ -318,6 +319,128 @@ namespace Hangfire.Core.Tests.Server
             // Assert
             _instant.Verify(x => x.GetNextInstants(
                 It.Is<DateTime>(time => time < nextExecution), null));
+        }
+
+        [Fact]
+        public void Execute_LowerDateRange_DoesNotTriggerWhenOutOfBounds()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddHours(-10);
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob["StartDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(20));
+            _recurringJob.Remove("LastExecution");
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => !rj.ContainsKey("LastExecution"))));
+        }
+
+        [Fact]
+        public void Execute_LowerDateRange_DoesTriggerWhenInBounds()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddHours(-10);
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob["StartDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(5));
+            _recurringJob.Remove("LastExecution");
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => rj.ContainsKey("LastExecution"))));
+        }
+
+        [Fact]
+        public void Execute_UpperDateRange_DoesNotTriggerWhenOutOfBounds()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddHours(-10);
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob["EndDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(-10));
+            _recurringJob.Remove("LastExecution");
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => !rj.ContainsKey("LastExecution"))));
+        }
+
+        [Fact]
+        public void Execute_UpperDateRange_DoesTriggerWhenInBounds()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddHours(-10);
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob["EndDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(20));
+            _recurringJob.Remove("LastExecution");
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => rj.ContainsKey("LastExecution"))));
+        }
+
+        [Fact]
+        public void Execute_DateRange_DoesTriggerWhenInBounds()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddHours(-10);
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob["StartDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(-10));
+            _recurringJob["EndDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(20));
+            _recurringJob.Remove("LastExecution");
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => rj.ContainsKey("LastExecution"))));
+        }
+
+        [Fact]
+        public void Execute_DateRange_DoesNotTriggerWhenOutOfBounds()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddHours(-10);
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob["StartDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(20));
+            _recurringJob["EndDate"] = JobHelper.SerializeDateTime(nextExecution.AddHours(25));
+            _recurringJob.Remove("LastExecution");
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => !rj.ContainsKey("LastExecution"))));
         }
 
         private RecurringDateRangeJobScheduler CreateScheduler()
