@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Hangfire.RecurringDateRange</id>
+    <version>0.0.0</version>
+    <title>Hangfire.RecurringDateRange</title>
+    <authors>Joe Coutcher,Sergey Odinokov</authors>
+    <owners>jcoutch,odinserj</owners>
+    <projectUrl>https://github.com/jcoutch/Hangfire.RecurringDateRange</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/jcoutch/Hangfire.RecurringDateRange/blob/master/LICENSE</licenseUrl>
+    <description>A fork of Hangfire's recurring background job processing (to add date ranges, and additional cron support)</description>
+    <tags>Hangfire OWIN Long-Running Background Fire-And-Forget Delayed Recurring Tasks Jobs Scheduler Threading Queues</tags>
+    <releaseNotes></releaseNotes>
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+  </files>
+</package>
