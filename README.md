@@ -18,6 +18,11 @@ To use, pass in a new instance of `RecurringDateRangeJobScheduler()` into `UseHa
   appBuilder.UseHangfireServer(backgroundServerJobOptions, new RecurringDateRangeJobScheduler());
 ```
 
+This library also uses [`NCrontab.Advanced`](https://github.com/jcoutch/NCrontab-Advanced) for cron expression parsing.  You can specify the format of your cron expressions via the `cronStringFormat` parameter:
+```
+  appBuilder.UseHangfireServer(backgroundServerJobOptions, new RecurringDateRangeJobScheduler(CronStringFormat.WithSecondsAndYears));
+``` 
+
 Then, instead of using the `RecurringJob` static methods, use the `RecurringDateRangeJob` static methods to create/remove jobs:
 
 ```

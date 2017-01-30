@@ -26,6 +26,7 @@ using Hangfire.Server;
 using Hangfire.States;
 using Hangfire.Storage;
 using NCrontab.Advanced;
+using NCrontab.Advanced.Enumerations;
 
 namespace Hangfire.RecurringDateRange.Server
 {
@@ -38,13 +39,16 @@ namespace Hangfire.RecurringDateRange.Server
         private readonly Func<CrontabSchedule, TimeZoneInfo, IScheduleInstant> _instantFactory;
         private readonly IThrottler _throttler;
 
+        private CronStringFormat _cronStringFormat;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="RecurringDateRangeJobScheduler"/>
         /// class with default background job factory.
         /// </summary>
-        public RecurringDateRangeJobScheduler()
+        public RecurringDateRangeJobScheduler(CronStringFormat cronStringFormat = CronStringFormat.Default)
             : this(new BackgroundJobFactory())
         {
+            _cronStringFormat = cronStringFormat;
         }
 
         /// <summary>
@@ -128,7 +132,7 @@ namespace Hangfire.RecurringDateRange.Server
             var serializedJob = JobHelper.FromJson<InvocationData>(recurringJob["Job"]);
             var job = serializedJob.Deserialize();
             var cron = recurringJob["Cron"];
-            var cronSchedule = CrontabSchedule.Parse(cron);
+            var cronSchedule = CrontabSchedule.Parse(cron, _cronStringFormat);
             
             var startDate = JobHelper.DeserializeNullableDateTime(recurringJob["StartDate"]);
             var endDate = JobHelper.DeserializeNullableDateTime(recurringJob["EndDate"]);
