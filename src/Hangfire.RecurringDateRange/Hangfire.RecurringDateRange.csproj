@@ -59,6 +59,8 @@
     <Compile Include="Constants\PluginConstants.cs" />
     <Compile Include="Contracts\IScheduleInstant.cs" />
     <Compile Include="Contracts\IThrottler.cs" />
+    <Compile Include="Extensions\TypeExtensions.cs" />
+    <Compile Include="RecurringDateRangeJob.cs" />
     <Compile Include="Server\RecurringDateRangeJobManager.cs" />
     <Compile Include="Server\RecurringDateRangeJobManagerExtensions.cs" />
     <Compile Include="Server\RecurringDateRangeJobScheduler.cs" />
