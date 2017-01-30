@@ -29,7 +29,7 @@ using NCrontab.Advanced;
 
 namespace Hangfire.RecurringDateRange.Server
 {
-    public class RecurringDateRangeJobScheduler
+    public class RecurringDateRangeJobScheduler : IBackgroundProcess
     {
         private static readonly TimeSpan LockTimeout = TimeSpan.FromMinutes(1);
         private static readonly ILog Logger = LogProvider.For<RecurringJobScheduler>();
