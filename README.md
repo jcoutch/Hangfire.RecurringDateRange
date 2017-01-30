@@ -8,7 +8,7 @@ Job Scheduler/Background processor for recurring jobs within a specified date ra
 # Installation
 Run the following from Package Manager Console:
 ```
-Install-Package Hangfire.RecurringDateRange
+  Install-Package Hangfire.RecurringDateRange
 ```
 
 # Usage
@@ -21,12 +21,12 @@ To use, pass in a new instance of `RecurringDateRangeJobScheduler()` into `UseHa
 Then, instead of using the `RecurringJob` static methods, use the `RecurringDateRangeJob` static methods to create/remove jobs:
 
 ```
-// Runs a job every second between the 1st and 27th of January 2017
-RecurringDateRangeJob.AddOrUpdate("my-date-range-job",
-    () => Console.WriteLine("Awesomesauce!", "* * * * *",
-    startDate: DateTime.Parse("2017-01-01"),
-    endDate: DateTime.Parse("2017-01-27")
-);
+  // Runs a job every second between the 1st and 27th of January 2017
+  RecurringDateRangeJob.AddOrUpdate("my-date-range-job",
+      () => Console.WriteLine("Awesomesauce!", "* * * * *",
+      startDate: DateTime.Parse("2017-01-01"),
+      endDate: DateTime.Parse("2017-01-27")
+  );
 
-RecurringDateRangeJob.RemoveIfExists("my-date-range-job")
+  RecurringDateRangeJob.RemoveIfExists("my-date-range-job")
 ```
