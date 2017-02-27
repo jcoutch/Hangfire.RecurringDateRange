@@ -134,11 +134,14 @@ namespace Hangfire.RecurringDateRange.Server
             var cron = recurringJob["Cron"];
             var cronSchedule = CrontabSchedule.Parse(cron, _cronStringFormat);
             
-            var startDate = JobHelper.DeserializeNullableDateTime(recurringJob["StartDate"]);
-            var endDate = JobHelper.DeserializeNullableDateTime(recurringJob["EndDate"]);
-
             try
             {
+                var startDate = JobHelper.DeserializeNullableDateTime(recurringJob["StartDate"]);
+                if (startDate.HasValue) startDate = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
+
+                var endDate = JobHelper.DeserializeNullableDateTime(recurringJob["EndDate"]);
+                if (endDate.HasValue) endDate = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
+
                 var timeZone = recurringJob.ContainsKey("TimeZoneId")
                     ? TimeZoneInfo.FindSystemTimeZoneById(recurringJob["TimeZoneId"])
                     : TimeZoneInfo.Utc;

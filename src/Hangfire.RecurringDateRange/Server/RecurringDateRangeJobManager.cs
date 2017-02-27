@@ -68,8 +68,11 @@ namespace Hangfire.RecurringDateRange.Server
                 recurringJob["TimeZoneId"] = options.TimeZone.Id;
                 recurringJob["Queue"] = options.QueueName;
 
-                recurringJob["StartDate"] = JobHelper.SerializeDateTime(startDate ?? DateTime.MinValue);
-                recurringJob["EndDate"] = JobHelper.SerializeDateTime(endDate ?? DateTime.MaxValue);
+                var utcStartDate = startDate.HasValue ? TimeZoneInfo.ConvertTime(startDate.Value, options.TimeZone, TimeZoneInfo.Utc) : (DateTime?) null;
+                var utcEndDate = endDate.HasValue ? TimeZoneInfo.ConvertTime(endDate.Value, options.TimeZone, TimeZoneInfo.Utc) : (DateTime?) null;
+
+                recurringJob["StartDate"] = JobHelper.SerializeDateTime(utcStartDate ?? DateTime.MinValue);
+                recurringJob["EndDate"] = JobHelper.SerializeDateTime(utcEndDate ?? DateTime.MaxValue);
 
                 var existingJob = connection.GetAllEntriesFromHash($"{PluginConstants.JobType}:{recurringJobId}");
                 if (existingJob == null)
