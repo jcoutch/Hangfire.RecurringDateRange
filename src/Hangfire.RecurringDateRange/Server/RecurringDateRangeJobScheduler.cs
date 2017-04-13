@@ -39,16 +39,18 @@ namespace Hangfire.RecurringDateRange.Server
         private readonly Func<CrontabSchedule, TimeZoneInfo, IScheduleInstant> _instantFactory;
         private readonly IThrottler _throttler;
 
-        private CronStringFormat _cronStringFormat;
+        private readonly CronStringFormat _cronStringFormat;
+        private readonly bool _ignoreTimeComponentInStartEndDates;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RecurringDateRangeJobScheduler"/>
         /// class with default background job factory.
         /// </summary>
-        public RecurringDateRangeJobScheduler(CronStringFormat cronStringFormat = CronStringFormat.Default)
+        public RecurringDateRangeJobScheduler(CronStringFormat cronStringFormat = CronStringFormat.Default, bool ignoreTimeComponentInStartEndDates = false)
             : this(new BackgroundJobFactory())
         {
             _cronStringFormat = cronStringFormat;
+            _ignoreTimeComponentInStartEndDates = ignoreTimeComponentInStartEndDates;
         }
 
         /// <summary>
@@ -203,13 +205,21 @@ namespace Hangfire.RecurringDateRange.Server
 
         }
 
-        private static bool WithinDateRange(IScheduleInstant nowInstant, DateTime? startDate, DateTime? endDate, TimeZoneInfo timeZone)
+        private bool WithinDateRange(IScheduleInstant nowInstant, DateTime? startDate, DateTime? endDate, TimeZoneInfo timeZone)
         {
             var startDateForZone = startDate == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(startDate.Value, TimeZoneInfo.Utc, timeZone);
             var endDateForZone = endDate == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(endDate.Value, TimeZoneInfo.Utc, timeZone);
             var nowInstantForZone = TimeZoneInfo.ConvertTime(nowInstant.NowInstant, TimeZoneInfo.Utc, timeZone);
 
-            return (startDateForZone == null || startDateForZone <= nowInstantForZone) && (endDateForZone == null || endDateForZone > nowInstantForZone);
+            // If the time component should be ignored, ignore it.
+            if (_ignoreTimeComponentInStartEndDates)
+            {
+                startDateForZone = startDateForZone?.Date;
+                endDateForZone = endDateForZone?.Date;
+                nowInstantForZone = nowInstantForZone.Date;
+            }
+
+            return (startDateForZone == null || startDateForZone <= nowInstantForZone) && (endDateForZone == null || endDateForZone >= nowInstantForZone);
         }
 
         private static DateTime GetLastInstant(IReadOnlyDictionary<string, string> recurringJob, IScheduleInstant instant)

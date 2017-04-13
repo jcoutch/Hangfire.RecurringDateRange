@@ -191,6 +191,29 @@ namespace Hangfire.Core.Tests
         }
 
         [Fact]
+        public void AddOrUpdate_WithDateRangeAndTimeZone_CommitsTransaction()
+        {
+            var manager = CreateManager();
+
+            manager.AddOrUpdate(_id, _job, _cronExpression, TimeZoneInfo.Local, new DateTime(2010, 1, 1), new DateTime(2010, 1, 3));
+
+            _transaction.Verify(x => x.Commit());
+        }
+
+        [Fact]
+        public void AddOrUpdate_WithDateRangeWithKindAndTimeZone_CommitsTransaction()
+        {
+            var manager = CreateManager();
+
+            manager.AddOrUpdate(_id, _job, _cronExpression, TimeZoneInfo.Local,
+                DateTime.SpecifyKind(new DateTime(2010, 1, 1), DateTimeKind.Unspecified),
+                DateTime.SpecifyKind(new DateTime(2010, 1, 3), DateTimeKind.Unspecified)
+            );
+
+            _transaction.Verify(x => x.Commit());
+        }
+
+        [Fact]
         public void AddOrUpdate_DoesNotUpdateCreatedAtValue_OfExistingJobs()
         {
             // Arrange
