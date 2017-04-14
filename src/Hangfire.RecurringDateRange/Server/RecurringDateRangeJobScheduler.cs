@@ -215,11 +215,11 @@ namespace Hangfire.RecurringDateRange.Server
             if (_ignoreTimeComponentInStartEndDates)
             {
                 startDateForZone = startDateForZone?.Date;
-                endDateForZone = endDateForZone?.Date;
+                endDateForZone = endDateForZone?.Date.AddDays(1); // So it's inclusive of the previous day
                 nowInstantForZone = nowInstantForZone.Date;
             }
 
-            return (startDateForZone == null || startDateForZone <= nowInstantForZone) && (endDateForZone == null || endDateForZone >= nowInstantForZone);
+            return (startDateForZone == null || startDateForZone <= nowInstantForZone) && (endDateForZone == null || endDateForZone > nowInstantForZone);
         }
 
         private static DateTime GetLastInstant(IReadOnlyDictionary<string, string> recurringJob, IScheduleInstant instant)
