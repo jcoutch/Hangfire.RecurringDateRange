@@ -31,7 +31,7 @@ namespace Hangfire.RecurringDateRange.Server
         public static Func<CrontabSchedule, TimeZoneInfo, IScheduleInstant> Factory =
             (schedule, timeZone) => new ScheduleInstant(DateTime.UtcNow, timeZone, schedule);
 
-        public ScheduleInstant(DateTime nowInstant, TimeZoneInfo timeZone, [NotNull] CrontabSchedule schedule)
+        public ScheduleInstant(DateTime nowInstant, TimeZoneInfo timeZone, [NotNull] CrontabSchedule schedule, DateTime? endDate = null)
         {
             if (schedule == null) throw new ArgumentNullException(nameof(schedule));
             if (nowInstant.Kind != DateTimeKind.Utc)
@@ -44,9 +44,10 @@ namespace Hangfire.RecurringDateRange.Server
 
             NowInstant = nowInstant.AddSeconds(-nowInstant.Second);
 
-            var nextOccurrences = _schedule.GetNextOccurrences(
-                TimeZoneInfo.ConvertTime(NowInstant, TimeZoneInfo.Utc, _timeZone),
-                DateTime.MaxValue);
+	        var occurenceEndDate = endDate ?? DateTime.MaxValue;
+
+			var nextOccurrences = _schedule.GetNextOccurrences(TimeZoneInfo.ConvertTime(NowInstant, TimeZoneInfo.Utc, _timeZone), occurenceEndDate)
+				.Where(x => x != occurenceEndDate); // Explicitly exclude the end date
 
             foreach (var nextOccurrence in nextOccurrences)
             {

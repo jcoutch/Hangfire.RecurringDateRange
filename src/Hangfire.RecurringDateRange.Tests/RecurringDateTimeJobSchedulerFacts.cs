@@ -443,12 +443,55 @@ namespace Hangfire.Core.Tests.Server
                 It.Is<Dictionary<string, string>>(rj => !rj.ContainsKey("LastExecution"))));
         }
 
-        private RecurringDateRangeJobScheduler CreateScheduler()
+		[Fact]
+		public void Execute_DateRange_DoesNotThrowExceptionWhenAtDateTimeMinMaxBounds()
+		{
+			// Arrange
+			var nextExecution = DateTime.UtcNow.AddHours(-10);
+			_recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+			_recurringJob["StartDate"] = JobHelper.SerializeDateTime(DateTime.MinValue);
+			_recurringJob["EndDate"] = JobHelper.SerializeDateTime(DateTime.MaxValue);
+			_recurringJob.Remove("LastExecution");
+
+			var scheduler = CreateScheduler(true);
+			
+			// Act (if it doesn't throw an exception, we're good!)
+			scheduler.Execute(_context.Object);
+		}
+
+		[Fact]
+		public void Execute_DateRange_DoesNotThrowExceptionWhenNextInstantIsNull()
+		{
+			var nullNextInstant = new Mock<IScheduleInstant>();
+			nullNextInstant.Setup(x => x.GetNextInstants(It.IsAny<DateTime>(), null)).Returns(new[] { _instant.Object.NowInstant });
+			nullNextInstant.Setup(x => x.GetNextInstants(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(new[] { _instant.Object.NowInstant });
+			nullNextInstant.Setup(x => x.NowInstant).Returns(DateTime.UtcNow);
+			nullNextInstant.Setup(x => x.NextInstant).Returns((DateTime?) null);
+
+			// Arrange
+			var nextExecution = DateTime.UtcNow.AddHours(-10);
+			_recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+			_recurringJob["StartDate"] = JobHelper.SerializeDateTime(DateTime.MinValue);
+			_recurringJob["EndDate"] = JobHelper.SerializeDateTime(DateTime.MaxValue);
+			_recurringJob.Remove("LastExecution");
+
+			var scheduler = new RecurringDateRangeJobScheduler(
+				_factory.Object,
+				(schedule, timeZone) => nullNextInstant.Object,
+				_throttler.Object,
+				true);
+
+			// Act (if it doesn't throw an exception, we're good!)
+			scheduler.Execute(_context.Object);
+		}
+
+		private RecurringDateRangeJobScheduler CreateScheduler(bool ignoreTimeComponentInStartEndDates = false)
         {
             return new RecurringDateRangeJobScheduler(
                 _factory.Object,
                 _instantFactory,
-                _throttler.Object);
+                _throttler.Object,
+				ignoreTimeComponentInStartEndDates);
         }
     }
 }

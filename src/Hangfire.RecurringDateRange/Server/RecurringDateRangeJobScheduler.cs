@@ -60,15 +60,16 @@ namespace Hangfire.RecurringDateRange.Server
         /// <param name="factory">Factory that will be used to create background jobs.</param>
         /// 
         /// <exception cref="ArgumentNullException"><paramref name="factory"/> is null.</exception>
-        public RecurringDateRangeJobScheduler([NotNull] IBackgroundJobFactory factory)
-            : this(factory, ScheduleInstant.Factory, new EveryMinuteThrottler())
+        public RecurringDateRangeJobScheduler([NotNull] IBackgroundJobFactory factory, bool ignoreTimeComponentInStartEndDates = false)
+            : this(factory, ScheduleInstant.Factory, new EveryMinuteThrottler(), ignoreTimeComponentInStartEndDates)
         {
         }
 
         internal RecurringDateRangeJobScheduler(
             [NotNull] IBackgroundJobFactory factory,
             [NotNull] Func<CrontabSchedule, TimeZoneInfo, IScheduleInstant> instantFactory,
-            [NotNull] IThrottler throttler)
+            [NotNull] IThrottler throttler,
+			bool ignoreTimeComponentInStartEndDates = false)
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             if (instantFactory == null) throw new ArgumentNullException(nameof(instantFactory));
@@ -77,6 +78,7 @@ namespace Hangfire.RecurringDateRange.Server
             _factory = factory;
             _instantFactory = instantFactory;
             _throttler = throttler;
+	        _ignoreTimeComponentInStartEndDates = ignoreTimeComponentInStartEndDates;
         }
 
         /// <inheritdoc />
@@ -144,16 +146,29 @@ namespace Hangfire.RecurringDateRange.Server
                 var endDate = JobHelper.DeserializeNullableDateTime(recurringJob["EndDate"]);
                 if (endDate.HasValue) endDate = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
 
-                var timeZone = recurringJob.ContainsKey("TimeZoneId")
+				var timeZone = recurringJob.ContainsKey("TimeZoneId")
                     ? TimeZoneInfo.FindSystemTimeZoneById(recurringJob["TimeZoneId"])
                     : TimeZoneInfo.Utc;
 
-                var nowInstant = _instantFactory(cronSchedule, timeZone);
-                var changedFields = new Dictionary<string, string>();
+				var startDateForZone = startDate == null ? (DateTime?)null : TimeZoneInfo.ConvertTime(startDate.Value, TimeZoneInfo.Utc, timeZone);
+				var endDateForZone = endDate == null ? (DateTime?)null : TimeZoneInfo.ConvertTime(endDate.Value, TimeZoneInfo.Utc, timeZone);
 
-                var lastInstant = GetLastInstant(recurringJob, nowInstant);
+				var nowInstant = _instantFactory(cronSchedule, timeZone);
+				var nowInstantForZone = TimeZoneInfo.ConvertTime(nowInstant.NowInstant, TimeZoneInfo.Utc, timeZone);
 
-                if (WithinDateRange(nowInstant, startDate, endDate, timeZone) && nowInstant.GetNextInstants(lastInstant, endDate).Any())
+				// If the time component should be ignored, ignore it.
+				if (_ignoreTimeComponentInStartEndDates)
+				{
+					startDateForZone = startDateForZone?.Date;
+					endDateForZone = endDateForZone?.Year != 9999 ? endDateForZone?.Date.AddDays(1) : endDateForZone?.Date; // So it's inclusive of the previous day
+					nowInstantForZone = nowInstantForZone.Date;
+				}
+
+				var changedFields = new Dictionary<string, string>();
+
+				var lastInstant = GetLastInstant(recurringJob, nowInstant, startDateForZone, endDateForZone);
+
+                if (WithinDateRange(nowInstantForZone, startDateForZone, endDateForZone) && nowInstant.GetNextInstants(lastInstant, endDateForZone).Any())
                 {
                     var state = new EnqueuedState { Reason = "Triggered by recurring job scheduler" };
                     if (recurringJob.ContainsKey("Queue") && !String.IsNullOrEmpty(recurringJob["Queue"]))
@@ -205,24 +220,12 @@ namespace Hangfire.RecurringDateRange.Server
 
         }
 
-        private bool WithinDateRange(IScheduleInstant nowInstant, DateTime? startDate, DateTime? endDate, TimeZoneInfo timeZone)
+        private bool WithinDateRange(DateTime nowInstant, DateTime? startDate, DateTime? endDate)
         {
-            var startDateForZone = startDate == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(startDate.Value, TimeZoneInfo.Utc, timeZone);
-            var endDateForZone = endDate == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(endDate.Value, TimeZoneInfo.Utc, timeZone);
-            var nowInstantForZone = TimeZoneInfo.ConvertTime(nowInstant.NowInstant, TimeZoneInfo.Utc, timeZone);
-
-            // If the time component should be ignored, ignore it.
-            if (_ignoreTimeComponentInStartEndDates)
-            {
-                startDateForZone = startDateForZone?.Date;
-                endDateForZone = endDateForZone?.Date.AddDays(1); // So it's inclusive of the previous day
-                nowInstantForZone = nowInstantForZone.Date;
-            }
-
-            return (startDateForZone == null || startDateForZone <= nowInstantForZone) && (endDateForZone == null || endDateForZone > nowInstantForZone);
+			return (startDate == null || startDate <= nowInstant) && (endDate == null || endDate > nowInstant);
         }
 
-        private static DateTime GetLastInstant(IReadOnlyDictionary<string, string> recurringJob, IScheduleInstant instant)
+        private static DateTime GetLastInstant(IReadOnlyDictionary<string, string> recurringJob, IScheduleInstant instant, DateTime? startDateForZone, DateTime? endDateForZone)
         {
             DateTime lastInstant;
 
@@ -244,7 +247,12 @@ namespace Hangfire.RecurringDateRange.Server
                 lastInstant = instant.NowInstant.AddSeconds(-1);
             }
 
-            return lastInstant;
+	        if (startDateForZone.HasValue && lastInstant < startDateForZone.Value)
+		        lastInstant = startDateForZone.Value;
+			else if (endDateForZone.HasValue && lastInstant < endDateForZone.Value)
+		        lastInstant = endDateForZone.Value;
+
+			return lastInstant;
         }
     }
 }
