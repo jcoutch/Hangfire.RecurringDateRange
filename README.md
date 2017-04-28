@@ -23,12 +23,18 @@ This library also uses [`NCrontab.Advanced`](https://github.com/jcoutch/NCrontab
   appBuilder.UseHangfireServer(backgroundServerJobOptions, new RecurringDateRangeJobScheduler(CronStringFormat.WithSecondsAndYears));
 ``` 
 
+By default, `RecurringDateRangeJobScheduler` will use the time component of the start/end dates.  If you want to ignore them, you can pass `true`/`false` as the 2nd parameter to the constructor (`false` is default):
+```
+  // Ingore the time component on start/end dates
+  appBuilder.UseHangfireServer(backgroundServerJobOptions, new RecurringDateRangeJobScheduler(CronStringFormat.WithSecondsAndYears, true));
+``` 
+
 Then, instead of using the `RecurringJob` static methods, use the `RecurringDateRangeJob` static methods to create/remove jobs:
 
 ```
   // Runs a job every second between the 1st and 27th of January 2017
   RecurringDateRangeJob.AddOrUpdate("my-date-range-job",
-      () => Console.WriteLine("Awesomesauce!", "* * * * *",
+      () => Console.WriteLine("Awesomesauce!"), "* * * * *",
       startDate: DateTime.Parse("2017-01-01"),
       endDate: DateTime.Parse("2017-01-27")
   );
