@@ -460,6 +460,23 @@ namespace Hangfire.Core.Tests.Server
 		}
 
 		[Fact]
+		public void Execute_DateRange_DoesNotPukeWhenLastInstantIsOutsideBounds()
+		{
+			// Arrange
+			var currentTime = DateTime.UtcNow;
+			var nextExecution = DateTime.UtcNow;
+			_recurringJob["StartDate"] = JobHelper.SerializeDateTime(currentTime.AddDays(-1));
+			_recurringJob["EndDate"] = JobHelper.SerializeDateTime(currentTime.AddDays(1));
+			_recurringJob["LastExecution"] = JobHelper.SerializeDateTime(currentTime.AddDays(-2));
+			_recurringJob["TimeZoneId"] = TimeZoneInfo.Local.Id;
+
+			var scheduler = CreateScheduler(true);
+
+			// Act (if it doesn't throw an exception, we're good!)
+			scheduler.Execute(_context.Object);
+		}
+
+		[Fact]
 		public void Execute_DateRange_DoesNotThrowExceptionWhenNextInstantIsNull()
 		{
 			var nullNextInstant = new Mock<IScheduleInstant>();

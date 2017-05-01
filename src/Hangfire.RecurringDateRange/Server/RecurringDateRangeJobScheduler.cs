@@ -166,9 +166,9 @@ namespace Hangfire.RecurringDateRange.Server
 
 				var changedFields = new Dictionary<string, string>();
 
-				var lastInstant = GetLastInstant(recurringJob, nowInstant, startDateForZone, endDateForZone);
+				var lastInstant = GetLastInstant(recurringJob, nowInstant, startDate, endDate);
 
-                if (WithinDateRange(nowInstantForZone, startDateForZone, endDateForZone) && nowInstant.GetNextInstants(lastInstant, endDateForZone).Any())
+                if (WithinDateRange(nowInstantForZone, startDateForZone, endDateForZone) && nowInstant.GetNextInstants(lastInstant, endDate).Any())
                 {
                     var state = new EnqueuedState { Reason = "Triggered by recurring job scheduler" };
                     if (recurringJob.ContainsKey("Queue") && !String.IsNullOrEmpty(recurringJob["Queue"]))
@@ -225,21 +225,21 @@ namespace Hangfire.RecurringDateRange.Server
 			return (startDate == null || startDate <= nowInstant) && (endDate == null || endDate > nowInstant);
         }
 
-        private static DateTime GetLastInstant(IReadOnlyDictionary<string, string> recurringJob, IScheduleInstant instant, DateTime? startDateForZone, DateTime? endDateForZone)
+        private static DateTime GetLastInstant(IReadOnlyDictionary<string, string> recurringJob, IScheduleInstant instant, DateTime? startDateUTC, DateTime? endDateUTC)
         {
             DateTime lastInstant;
 
             if (recurringJob.ContainsKey("LastExecution"))
             {
-                lastInstant = JobHelper.DeserializeDateTime(recurringJob["LastExecution"]);
+                lastInstant = DateTime.SpecifyKind(JobHelper.DeserializeDateTime(recurringJob["LastExecution"]), DateTimeKind.Utc);
             }
             else if (recurringJob.ContainsKey("CreatedAt"))
             {
-                lastInstant = JobHelper.DeserializeDateTime(recurringJob["CreatedAt"]);
-            }
+                lastInstant = DateTime.SpecifyKind(JobHelper.DeserializeDateTime(recurringJob["CreatedAt"]), DateTimeKind.Utc);
+			}
             else if (recurringJob.ContainsKey("NextExecution"))
             {
-                lastInstant = JobHelper.DeserializeDateTime(recurringJob["NextExecution"]);
+                lastInstant = DateTime.SpecifyKind(JobHelper.DeserializeDateTime(recurringJob["NextExecution"]), DateTimeKind.Utc);
                 lastInstant = lastInstant.AddSeconds(-1);
             }
             else
@@ -247,10 +247,10 @@ namespace Hangfire.RecurringDateRange.Server
                 lastInstant = instant.NowInstant.AddSeconds(-1);
             }
 
-	        if (startDateForZone.HasValue && lastInstant < startDateForZone.Value)
-		        lastInstant = startDateForZone.Value;
-			else if (endDateForZone.HasValue && lastInstant < endDateForZone.Value)
-		        lastInstant = endDateForZone.Value;
+	        if (startDateUTC.HasValue && lastInstant < startDateUTC.Value)
+		        lastInstant = startDateUTC.Value;
+			else if (endDateUTC.HasValue && lastInstant > endDateUTC.Value)
+		        lastInstant = endDateUTC.Value;
 
 			return lastInstant;
         }
