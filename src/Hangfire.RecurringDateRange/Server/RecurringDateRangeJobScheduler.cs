@@ -162,6 +162,10 @@ namespace Hangfire.RecurringDateRange.Server
 					startDateForZone = startDateForZone?.Date;
 					endDateForZone = endDateForZone?.Year != 9999 ? endDateForZone?.Date.AddDays(1) : endDateForZone?.Date; // So it's inclusive of the previous day
 					nowInstantForZone = nowInstantForZone.Date;
+
+					// Now that we have the proper start/end dates, re-adjust the UTC versions so GetNextInstants works with the proper date range
+					startDate = startDateForZone == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(startDateForZone.Value, timeZone, TimeZoneInfo.Utc);
+					endDate = endDateForZone == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(endDateForZone.Value, timeZone, TimeZoneInfo.Utc);
 				}
 
 				var changedFields = new Dictionary<string, string>();
