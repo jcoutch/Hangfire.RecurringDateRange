@@ -1,83 +1,23 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3F4A119F-155B-4800-8C81-2F16CBB7268A}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Hangfire.RecurringDateRange</RootNamespace>
-    <AssemblyName>Hangfire.RecurringDateRange</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <TargetFrameworks>netstandard1.3;net452</TargetFrameworks>
+    <version>$(Version)</version>
+    <title>Hangfire.RecurringDateRange</title>
+    <authors>Joe Coutcher,Sergey Odinokov</authors>
+    <owners>jcoutch,odinserj</owners>
+    <projectUrl>https://github.com/jcoutch/Hangfire.RecurringDateRange</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/jcoutch/Hangfire.RecurringDateRange/blob/master/LICENSE</licenseUrl>
+    <description>A fork of Hangfire's recurring background job processing (to add date ranges, and additional cron support)</description>
+    <tags>Hangfire OWIN Long-Running Background Fire-And-Forget Delayed Recurring Tasks Jobs Scheduler Threading Queues</tags>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <AssemblyFileVersion>$(Version)</AssemblyFileVersion>
+    <VersionPrefix>0.1.0.0</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Hangfire.Core, Version=1.6.8.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Hangfire.Core.1.6.8\lib\net45\Hangfire.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="NCrontab.Advanced, Version=1.2.3.3, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NCrontab.Advanced.1.2.3.3\lib\net451\NCrontab.Advanced.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.5.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Hangfire.Core" Version="1.6.15" />
+    <PackageReference Include="NCrontab.Advanced" Version="1.2.3.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Constants\PluginConstants.cs" />
-    <Compile Include="Contracts\IScheduleInstant.cs" />
-    <Compile Include="Contracts\IThrottler.cs" />
-    <Compile Include="Extensions\TypeExtensions.cs" />
-    <Compile Include="RecurringDateRangeJob.cs" />
-    <Compile Include="Server\RecurringDateRangeJobManager.cs" />
-    <Compile Include="Server\RecurringDateRangeJobManagerExtensions.cs" />
-    <Compile Include="Server\RecurringDateRangeJobScheduler.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Server\EveryMinuteThrottler.cs" />
-    <Compile Include="Server\ScheduleInstant.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Hangfire.RecurringDateRange.nuspec" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
