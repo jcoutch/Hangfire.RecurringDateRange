@@ -11,6 +11,12 @@ Run the following from Package Manager Console:
   Install-Package Hangfire.RecurringDateRange
 ```
 
+Also, during development/testing, I will frequently publish CI builds to Nuget as pre-release builds (so I can test/debug from my own projects that use Hangfire.RecurringDateRange.)  If you want to use these **un-tested builds at your own risk**, run the following command:
+```
+  Install-Package -IncludePrerelease Hangfire.RecurringDateRange
+```
+
+
 # Usage
 To use, pass in a new instance of `RecurringDateRangeJobScheduler()` into `UseHangfireServer`:
 ```
