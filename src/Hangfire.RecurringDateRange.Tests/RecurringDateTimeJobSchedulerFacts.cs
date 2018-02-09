@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using Hangfire.Client;
 using Hangfire.Common;
+using Hangfire.Core.Tests;
 using Hangfire.RecurringDateRange.Constants;
 using Hangfire.RecurringDateRange.Contracts;
 using Hangfire.RecurringDateRange.Server;
-using Hangfire.Server;
 using Hangfire.States;
 using Hangfire.Storage;
 using Moq;
-using NCrontab;
 using NCrontab.Advanced;
 using Xunit;
 
-namespace Hangfire.Core.Tests.Server
+namespace Hangfire.RecurringDateRange.Tests
 {
     public class RecurringDateTimeJobSchedulerFacts
     {

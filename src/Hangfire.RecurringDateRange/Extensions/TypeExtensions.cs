@@ -20,7 +20,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Hangfire.Annotations;
 
-namespace Hangfire.Common
+namespace Hangfire.RecurringDateRange.Extensions
 {
     internal static class TypeExtensions
     {

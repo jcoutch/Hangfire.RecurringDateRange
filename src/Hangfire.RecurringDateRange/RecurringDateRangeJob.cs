@@ -17,6 +17,7 @@ using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Hangfire.Common;
+using Hangfire.RecurringDateRange.Extensions;
 using Hangfire.RecurringDateRange.Server;
 using Hangfire.States;
 
