@@ -42,39 +42,37 @@ namespace Hangfire.RecurringDateRange.Server
 
         public RecurringDateRangeJobManager([NotNull] JobStorage storage, [NotNull] IBackgroundJobFactory factory)
         {
-            if (storage == null) throw new ArgumentNullException(nameof(storage));
-            if (factory == null) throw new ArgumentNullException(nameof(factory));
-
-            _storage = storage;
-            _factory = factory;
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
-        public void AddOrUpdate(string recurringJobId, Job job, string cronExpression, DateTime? startDate, DateTime? endDate, RecurringJobOptions options)
+        public void AddOrUpdate([NotNull] RecurringDateRangeJobOptions options)
         {
-            if (recurringJobId == null) throw new ArgumentNullException(nameof(recurringJobId));
-            if (job == null) throw new ArgumentNullException(nameof(job));
-            if (cronExpression == null) throw new ArgumentNullException(nameof(cronExpression));
             if (options == null) throw new ArgumentNullException(nameof(options));
-
-            ValidateCronExpression(cronExpression);
+            options.Validate();
+            ValidateCronExpression(options.CronExpression);
 
             using (var connection = _storage.GetConnection())
             {
                 var recurringJob = new Dictionary<string, string>();
-                var invocationData = InvocationData.Serialize(job);
+                var invocationData = InvocationData.Serialize(options.Job);
 
                 recurringJob["Job"] = JobHelper.ToJson(invocationData);
-                recurringJob["Cron"] = cronExpression;
-                recurringJob["TimeZoneId"] = options.TimeZone.Id;
-                recurringJob["Queue"] = options.QueueName;
+                recurringJob["Cron"] = options.CronExpression;
+                recurringJob["TimeZoneId"] = options.RecurringJobOptions.TimeZone.Id;
+                recurringJob["Queue"] = options.RecurringJobOptions.QueueName;
 
-                var utcStartDate = startDate.HasValue ? TimeZoneInfo.ConvertTime(startDate.Value, options.TimeZone, TimeZoneInfo.Utc) : (DateTime?) null;
-                var utcEndDate = endDate.HasValue ? TimeZoneInfo.ConvertTime(endDate.Value, options.TimeZone, TimeZoneInfo.Utc) : (DateTime?) null;
+                var utcStartDate = options.StartDateTime.HasValue ? TimeZoneInfo.ConvertTime(options.StartDateTime.Value, options.RecurringJobOptions.TimeZone, TimeZoneInfo.Utc) : (DateTime?) null;
+                var utcEndDate = options.EndDateTime.HasValue ? TimeZoneInfo.ConvertTime(options.EndDateTime.Value, options.RecurringJobOptions.TimeZone, TimeZoneInfo.Utc) : (DateTime?) null;
 
                 recurringJob["StartDate"] = JobHelper.SerializeDateTime(utcStartDate ?? DateTime.MinValue);
                 recurringJob["EndDate"] = JobHelper.SerializeDateTime(utcEndDate ?? DateTime.MaxValue);
+                if (options.UseEndDateTimeComponent.HasValue)
+                {
+                    recurringJob[HashKeys.UseEndDateTimeComponent] = options.UseEndDateTimeComponent.ToString();
+                }
 
-                var existingJob = connection.GetAllEntriesFromHash($"{PluginConstants.JobType}:{recurringJobId}");
+                var existingJob = connection.GetAllEntriesFromHash($"{PluginConstants.JobType}:{options.RecurringJobId}");
                 if (existingJob == null)
                 {
                     recurringJob["CreatedAt"] = JobHelper.SerializeDateTime(DateTime.UtcNow);
@@ -83,10 +81,10 @@ namespace Hangfire.RecurringDateRange.Server
                 using (var transaction = connection.CreateWriteTransaction())
                 {
                     transaction.SetRangeInHash(
-                        $"{PluginConstants.JobType}:{recurringJobId}",
+                        $"{PluginConstants.JobType}:{options.RecurringJobId}",
                         recurringJob);
 
-                    transaction.AddToSet(PluginConstants.JobSet, recurringJobId);
+                    transaction.AddToSet(PluginConstants.JobSet, options.RecurringJobId);
 
                     transaction.Commit();
                 }
@@ -133,7 +131,7 @@ namespace Hangfire.RecurringDateRange.Server
             }
         }
 
-        private static void ValidateCronExpression(string cronExpression)
+        internal static void ValidateCronExpression(string cronExpression)
         {
             try
             {

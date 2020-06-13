@@ -71,13 +71,9 @@ namespace Hangfire.RecurringDateRange.Server
             [NotNull] IThrottler throttler,
 			bool ignoreTimeComponentInStartEndDates = false)
         {
-            if (factory == null) throw new ArgumentNullException(nameof(factory));
-            if (instantFactory == null) throw new ArgumentNullException(nameof(instantFactory));
-            if (throttler == null) throw new ArgumentNullException(nameof(throttler));
-
-            _factory = factory;
-            _instantFactory = instantFactory;
-            _throttler = throttler;
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            _instantFactory = instantFactory ?? throw new ArgumentNullException(nameof(instantFactory));
+            _throttler = throttler ?? throw new ArgumentNullException(nameof(throttler));
 	        _ignoreTimeComponentInStartEndDates = ignoreTimeComponentInStartEndDates;
         }
 
@@ -146,7 +142,15 @@ namespace Hangfire.RecurringDateRange.Server
                 var endDate = JobHelper.DeserializeNullableDateTime(recurringJob["EndDate"]);
                 if (endDate.HasValue) endDate = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
 
-				var timeZone = recurringJob.ContainsKey("TimeZoneId")
+                var ignoreEndDateTimeComponent = _ignoreTimeComponentInStartEndDates;
+                if (recurringJob.ContainsKey(HashKeys.UseEndDateTimeComponent))
+                {
+                    bool.TryParse(recurringJob[HashKeys.UseEndDateTimeComponent] ?? bool.FalseString,
+                        out var useEndDateTimeComponent);
+                    ignoreEndDateTimeComponent = !useEndDateTimeComponent;
+                }
+
+                var timeZone = recurringJob.ContainsKey("TimeZoneId")
                     ? TimeZoneInfo.FindSystemTimeZoneById(recurringJob["TimeZoneId"])
                     : TimeZoneInfo.Utc;
 
@@ -156,19 +160,24 @@ namespace Hangfire.RecurringDateRange.Server
 				var nowInstant = _instantFactory(cronSchedule, timeZone);
 				var nowInstantForZone = TimeZoneInfo.ConvertTime(nowInstant.NowInstant, TimeZoneInfo.Utc, timeZone);
 
-				// If the time component should be ignored, ignore it.
-				if (_ignoreTimeComponentInStartEndDates)
-				{
-					startDateForZone = startDateForZone?.Date;
-					endDateForZone = endDateForZone?.Year != 9999 ? endDateForZone?.Date.AddDays(1) : endDateForZone?.Date; // So it's inclusive of the previous day
-					nowInstantForZone = nowInstantForZone.Date;
+                // If the time component should be ignored, ignore it.
+                if (_ignoreTimeComponentInStartEndDates && startDateForZone.HasValue)
+                {
+                    startDateForZone = startDateForZone.Value.Date;
+                    // Now that we have the proper date, re-adjust the UTC versions so GetNextInstants works with the proper date range
+                    startDate = TimeZoneInfo.ConvertTime(startDateForZone.Value, timeZone, TimeZoneInfo.Utc);
+                }
 
-					// Now that we have the proper start/end dates, re-adjust the UTC versions so GetNextInstants works with the proper date range
-					startDate = startDateForZone == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(startDateForZone.Value, timeZone, TimeZoneInfo.Utc);
-					endDate = endDateForZone == null ? (DateTime?) null : TimeZoneInfo.ConvertTime(endDateForZone.Value, timeZone, TimeZoneInfo.Utc);
-				}
+                if (endDateForZone.HasValue && ignoreEndDateTimeComponent)
+                {
+                    endDateForZone = (endDateForZone.Value.Date == DateTime.MaxValue.Date)
+                        ? DateTime.MaxValue
+                        : endDateForZone.Value.Date.AddDays(1);
+                    // Now that we have the proper date, re-adjust the UTC versions so GetNextInstants works with the proper date range
+                    endDate = TimeZoneInfo.ConvertTime(endDateForZone.Value, timeZone, TimeZoneInfo.Utc);
+                }
 
-				var changedFields = new Dictionary<string, string>();
+                var changedFields = new Dictionary<string, string>();
 
 				var lastInstant = GetLastInstant(recurringJob, nowInstant, startDate, endDate);
 

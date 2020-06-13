@@ -381,6 +381,27 @@ namespace Hangfire.RecurringDateRange.Tests
         }
 
         [Fact]
+        public void Execute_UpperDateRange_DoesNotTriggerWhenOutOfBoundsUsingEndDateTimeComponent()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.Date.AddHours(-10);
+            _recurringJob[HashKeys.NextExecution] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob[HashKeys.EndDate] = JobHelper.SerializeDateTime(nextExecution.AddHours(-1));
+            _recurringJob[HashKeys.UseEndDateTimeComponent] = bool.TrueString;
+            _recurringJob.Remove(HashKeys.LastExecution);
+
+            var scheduler = CreateScheduler(true);
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => !rj.ContainsKey(HashKeys.LastExecution))));
+        }
+
+        [Fact]
         public void Execute_UpperDateRange_DoesTriggerWhenInBounds()
         {
             // Arrange
@@ -422,6 +443,30 @@ namespace Hangfire.RecurringDateRange.Tests
         }
 
         [Fact]
+        public void Execute_DateRange_DoesTriggerWhenInBoundsUsingEndDateTimeComponentWithSingleDayRange()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddMinutes(-10);
+            var startDate = nextExecution.Date;
+            var endDate = nextExecution.AddMinutes(10);
+            _recurringJob[HashKeys.NextExecution] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob[HashKeys.StartDate] = JobHelper.SerializeDateTime(startDate);
+            _recurringJob[HashKeys.EndDate] = JobHelper.SerializeDateTime(endDate);
+            _recurringJob[HashKeys.UseEndDateTimeComponent] = bool.TrueString;
+            _recurringJob.Remove(HashKeys.LastExecution);
+
+            var scheduler = CreateScheduler();
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => rj.ContainsKey(HashKeys.LastExecution))));
+        }
+
+        [Fact]
         public void Execute_DateRange_DoesNotTriggerWhenOutOfBounds()
         {
             // Arrange
@@ -442,7 +487,31 @@ namespace Hangfire.RecurringDateRange.Tests
                 It.Is<Dictionary<string, string>>(rj => !rj.ContainsKey("LastExecution"))));
         }
 
-		[Fact]
+        [Fact]
+        public void Execute_DateRange_DoesTriggerOnEndDateAfterEndTime_WhenIgnoringTimeComponentsAndNotUsingEndDateTimeComponentAndIgnoring()
+        {
+            // Arrange
+            var nextExecution = DateTime.UtcNow.AddMinutes(-10);
+            var startDate = nextExecution.AddMinutes(-10);
+            var endDate = nextExecution.AddMinutes(-9);
+            _recurringJob[HashKeys.NextExecution] = JobHelper.SerializeDateTime(nextExecution);
+            _recurringJob[HashKeys.StartDate] = JobHelper.SerializeDateTime(startDate);
+            _recurringJob[HashKeys.EndDate] = JobHelper.SerializeDateTime(endDate);
+            _recurringJob[HashKeys.UseEndDateTimeComponent] = bool.FalseString;
+            _recurringJob.Remove(HashKeys.LastExecution);
+
+            var scheduler = CreateScheduler(true);
+
+            // Act
+            scheduler.Execute(_context.Object);
+
+            // Assert
+            _connection.Verify(x => x.SetRangeInHash(
+                $"{PluginConstants.JobType}:{RecurringJobId}",
+                It.Is<Dictionary<string, string>>(rj => rj.ContainsKey(HashKeys.LastExecution))));
+        }
+
+        [Fact]
 		public void Execute_DateRange_DoesNotThrowExceptionWhenAtDateTimeMinMaxBounds()
 		{
 			// Arrange
@@ -463,7 +532,6 @@ namespace Hangfire.RecurringDateRange.Tests
 		{
 			// Arrange
 			var currentTime = DateTime.UtcNow;
-			var nextExecution = DateTime.UtcNow;
 			_recurringJob["StartDate"] = JobHelper.SerializeDateTime(currentTime.AddDays(-1));
 			_recurringJob["EndDate"] = JobHelper.SerializeDateTime(currentTime.AddDays(1));
 			_recurringJob["LastExecution"] = JobHelper.SerializeDateTime(currentTime.AddDays(-2));

@@ -215,6 +215,11 @@ namespace Hangfire
             Instance.Value.AddOrUpdate(recurringJobId, job, cronExpression, timeZone ?? TimeZoneInfo.Utc, queue, startDate, endDate);
         }
 
+        public static void AddOrUpdate(RecurringDateRangeJobOptions options)
+        {
+            Instance.Value.AddOrUpdate(options);
+        }
+
         public static void AddOrUpdate<T>(
             string recurringJobId,
             Expression<Func<T, Task>> methodCall,

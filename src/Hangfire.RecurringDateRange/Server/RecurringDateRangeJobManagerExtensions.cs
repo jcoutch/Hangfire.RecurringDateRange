@@ -67,5 +67,31 @@ namespace Hangfire.RecurringDateRange.Server
                 endDateTime,
                 new RecurringJobOptions { QueueName = queue, TimeZone = timeZone });
         }
+
+        public static void AddOrUpdate(
+            [NotNull] this RecurringDateRangeJobManager manager,
+            string recurringJobId,
+            Job job,
+            string cronExpression,
+            DateTime? startDate,
+            DateTime? endDate,
+            RecurringJobOptions options)
+        {
+            if (recurringJobId == null) throw new ArgumentNullException(nameof(recurringJobId));
+            if (job == null) throw new ArgumentNullException(nameof(job));
+            if (cronExpression == null) throw new ArgumentNullException(nameof(cronExpression));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            manager.AddOrUpdate(
+                new RecurringDateRangeJobOptions()
+                {
+                    RecurringJobId = recurringJobId,
+                    Job = job,
+                    CronExpression = cronExpression,
+                    StartDateTime = startDate,
+                    EndDateTime = endDate,
+                    RecurringJobOptions = options
+                });
+        }
     }
 }
