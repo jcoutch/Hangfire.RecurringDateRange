@@ -139,7 +139,7 @@ namespace Hangfire.Core.Tests
             var manager = CreateManager();
 
             var exception = Assert.Throws<ArgumentNullException>(
-                () => manager.AddOrUpdate(_id, _job, _cronExpression, null, null, null));
+                () => manager.AddOrUpdate(_id, _job, _cronExpression, null, null, options:null));
 
             Assert.Equal("options", exception.ParamName);
         }
