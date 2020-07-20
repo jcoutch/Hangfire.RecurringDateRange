@@ -92,6 +92,7 @@
     <Compile Include="Mocks\PerformContextMock.cs" />
     <Compile Include="Mocks\StateChangeContextMock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RecurringDateRangeJobOptionsFacts.cs" />
     <Compile Include="RecurringDateTimeJobManagerFacts.cs" />
     <Compile Include="RecurringDateTimeJobSchedulerFacts.cs" />
     <Compile Include="Utils\CultureHelper.cs" />
