@@ -543,11 +543,22 @@ namespace Hangfire.RecurringDateRange.Tests
 			scheduler.Execute(_context.Object);
         }
 
-        //Ensure use of Windows or Iana TimeZone Id is allowed in either environment
+        //Ensure use of Windows or IANA TimeZone Id is allowed in either environment
         [Fact]
         public void Execute_DateRange_DoesNotPukeWhenTimeZoneIsIana()
         {
             _recurringJob[HashKeys.TimeZoneId] = "America/Detroit";
+
+            var scheduler = CreateScheduler(true);
+
+            // Act (if it doesn't throw an exception, we're good!)
+            scheduler.Execute(_context.Object);
+        }
+
+        [Fact]
+        public void Execute_DateRange_DoesNotPukeWhenTimeZoneIsWindows()
+        {
+            _recurringJob[HashKeys.TimeZoneId] = "Hawaiian Standard Time";
 
             var scheduler = CreateScheduler(true);
 
