@@ -151,7 +151,7 @@ namespace Hangfire.RecurringDateRange.Server
                 }
 
                 var timeZone = recurringJob.ContainsKey("TimeZoneId")
-                    ? TimeZoneInfo.FindSystemTimeZoneById(recurringJob["TimeZoneId"])
+                    ? TimeZoneConverter.TZConvert.GetTimeZoneInfo(recurringJob[HashKeys.TimeZoneId])
                     : TimeZoneInfo.Utc;
 
 				var startDateForZone = startDate == null ? (DateTime?)null : TimeZoneInfo.ConvertTime(startDate.Value, TimeZoneInfo.Utc, timeZone);
