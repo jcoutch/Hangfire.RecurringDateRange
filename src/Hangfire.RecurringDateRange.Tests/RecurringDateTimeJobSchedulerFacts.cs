@@ -592,11 +592,55 @@ namespace Hangfire.RecurringDateRange.Tests
 			scheduler.Execute(_context.Object);
 		}
 
-		private RecurringDateRangeJobScheduler CreateScheduler(bool ignoreTimeComponentInStartEndDates = false)
+
+		[Fact]
+		public void Execute_NextInstance_DoesTriggerHourly()
+		{
+			// Arrange
+
+            // Create a UTC date at 10 PM
+            var nextExecution = DateTime.SpecifyKind(new DateTime(2020, 01, 01, 22, 0, 0), DateTimeKind.Utc);
+
+            _recurringJob["Cron"] = "0 * * * *";
+            _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
+
+            var instanceFactoryDateTime = DateTime.SpecifyKind(new DateTime(2020, 01, 01, 22, 10, 0), DateTimeKind.Utc);
+
+            IScheduleInstant InstantFactory(CrontabSchedule schedule, TimeZoneInfo timeZone)
+	            => new ScheduleInstant(instanceFactoryDateTime, timeZone, schedule);
+
+            var scheduler = CreateScheduler(instantFactory: InstantFactory);
+
+            for (int i = 0; i < 24; i++)
+            {
+                // Increment start time by an hour
+	            nextExecution = nextExecution.AddHours(1);
+	            instanceFactoryDateTime = instanceFactoryDateTime.AddHours(1);
+
+                // Act
+                scheduler.Execute(_context.Object);
+
+                // Assert
+                var updatedNextExecution = nextExecution.AddHours(1); // Should be an hour ahead of nextExecution
+	            _connection.Verify(
+		            x => x.SetRangeInHash(
+			            $"{PluginConstants.JobType}:{RecurringJobId}",
+			            It.Is<Dictionary<string, string>>(rj =>
+				            JobHelper.DeserializeDateTime(rj["NextExecution"]).Hour == updatedNextExecution.Hour)),
+							Times.Once);
+
+            }
+        }
+
+
+
+
+
+        private RecurringDateRangeJobScheduler CreateScheduler(bool ignoreTimeComponentInStartEndDates = false, Func<CrontabSchedule, TimeZoneInfo, IScheduleInstant> instantFactory = null)
         {
             return new RecurringDateRangeJobScheduler(
                 _factory.Object,
-                _instantFactory,
+                instantFactory ?? _instantFactory,
                 _throttler.Object,
 				ignoreTimeComponentInStartEndDates);
         }
