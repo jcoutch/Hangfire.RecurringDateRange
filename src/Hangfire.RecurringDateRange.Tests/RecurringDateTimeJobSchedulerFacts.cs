@@ -597,14 +597,12 @@ namespace Hangfire.RecurringDateRange.Tests
 		public void Execute_NextInstance_DoesTriggerHourly()
 		{
 			// Arrange
-
-            // Create a UTC date at 10 PM
-            var nextExecution = DateTime.SpecifyKind(new DateTime(2020, 01, 01, 22, 0, 0), DateTimeKind.Utc);
+			var nextExecution = DateTime.SpecifyKind(new DateTime(2020, 01, 01, 0, 0, 0), DateTimeKind.Utc);
 
             _recurringJob["Cron"] = "0 * * * *";
             _recurringJob["NextExecution"] = JobHelper.SerializeDateTime(nextExecution);
 
-            var instanceFactoryDateTime = DateTime.SpecifyKind(new DateTime(2020, 01, 01, 22, 10, 0), DateTimeKind.Utc);
+            var instanceFactoryDateTime = DateTime.SpecifyKind(nextExecution.AddMinutes(10), DateTimeKind.Utc);
 
             IScheduleInstant InstantFactory(CrontabSchedule schedule, TimeZoneInfo timeZone)
 	            => new ScheduleInstant(instanceFactoryDateTime, timeZone, schedule);
